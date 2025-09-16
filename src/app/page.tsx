@@ -1,103 +1,116 @@
-import Image from "next/image";
+// src/app/page.tsx
+'use client';
 
-export default function Home() {
+import { useQuery, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { StatCard, StatCardSkeleton } from '@/components/dashboard/StatCard';
+import { getDashboardStats } from '@/services/dashboardService';
+import { Users, ShoppingCart, TrendingUp, DollarSign, AlertCircle, Search, Send } from 'lucide-react';
+
+const queryClient = new QueryClient();
+
+export default function DashboardPageWrapper() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <QueryClientProvider client={queryClient}>
+      <DashboardPage />
+    </QueryClientProvider>
+  );
+}
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+function DashboardPage() {
+  const router = useRouter();
+  
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ['adminDashboard'],
+    queryFn: getDashboardStats,
+  });
+
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+      );
+    }
+
+    if (isError) {
+      return (
+        <div className="flex flex-col items-center justify-center rounded-lg border bg-card p-8 text-center text-destructive">
+          <AlertCircle className="h-12 w-12" />
+          <h2 className="mt-4 text-xl font-semibold">Ошибка загрузки</h2>
+          <p className="text-sm">{error.message}</p>
+        </div>
+      );
+    }
+
+    if (data) {
+      // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+      // Теперь мы используем правильные имена полей из API
+      return (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="Всего пользователей"
+            value={data.total_users_count}
+            icon={<Users className="h-4 w-4" />}
+            description="Общее количество в системе"
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
+          <StatCard
+            title="Новые за сегодня"
+            value={`+${data.new_users_today_count}`}
+            icon={<TrendingUp className="h-4 w-4" />}
+            description="Новые регистрации"
           />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
+          <StatCard
+            title="Заказы в обработке"
+            value={data.processing_orders_count}
+            icon={<ShoppingCart className="h-4 w-4" />}
+            description={`+${data.new_orders_count} новых`}
           />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          <StatCard
+            title="Продажи за сегодня"
+            value={`${data.sales_today.toLocaleString('ru-RU')} ₽`}
+            icon={<DollarSign className="h-4 w-4" />}
+            description="Сумма завершенных заказов"
+          />
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  return (
+    <div className="container mx-auto p-4 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-bold mb-2 sm:mb-0">Панель управления</h1>
+        <p className="text-sm text-muted-foreground">
+          {/* ИСПРАВЛЕНИЕ: Проверяем data.last_updated */}
+          {data?.last_updated ? `Обновлено: ${new Date(data.last_updated).toLocaleString('ru-RU')}` : <>&nbsp;</>}
+        </p>
+      </div>
+
+      {/* Блок со статистикой */}
+      {renderContent()}
+
+      {/* Блок быстрых действий (без изменений) */}
+      <div>
+        <h2 className="text-lg font-semibold mb-2">Быстрые действия</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Button variant="outline" size="lg" onClick={() => router.push('/users')}>
+            <Search className="mr-2 h-5 w-5" />
+            Найти пользователя
+          </Button>
+          <Button variant="outline" size="lg" onClick={() => router.push('/more/broadcasts')}>
+            <Send className="mr-2 h-5 w-5" />
+            Создать рассылку
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
